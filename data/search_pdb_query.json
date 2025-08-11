@@ -1,0 +1,52 @@
+{
+    "query": {
+        "type": "group",
+        "logical_operator": "and",
+        "nodes": [
+            {
+                "type": "terminal",
+                "service": "text",
+                "parameters": {
+                    "attribute": "entity_poly.rcsb_entity_polymer_type",
+                    "operator": "exact_match",
+                    "value": "Protein"
+                }
+            },
+            {
+                "type": "terminal",
+                "service": "text",
+                "parameters": {
+                    "attribute": "rcsb_entry_info.resolution_combined",
+                    "operator": "less_or_equal",
+                    "value": 2.5
+                }
+            },
+            {
+                "type": "terminal",
+                "service": "text",
+                "parameters": {
+                    "attribute": "entity_poly.rcsb_sample_sequence_length",
+                    "operator": "range",
+                    "value": {
+                        "from": 50,
+                        "to": 400,
+                        "include_lower": true,
+                        "include_upper": true
+                    }
+                }
+            }
+        ]
+    },
+    "return_type": "polymer_entity",
+    "request_options": {
+        "group_by_return_type": "groups",
+        "group_by": {
+            "aggregation_method": "sequence_identity",
+            "similarity_cutoff": 100
+        },
+        "paginate": {
+            "start": 0,
+            "rows": 10000
+        }
+    }
+}
