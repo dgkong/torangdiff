@@ -1,0 +1,30 @@
+{
+    "max_steps": 100000,
+    "val_interval": 500,
+    "batch_size": 64,
+    "min_relative_delta": 0.001,
+    "patience": 10,
+    
+    "esm_proj": {
+        "c_in": 1280,
+        "c_out": 128
+    },
+
+    "model": {
+        "c_in": 6,
+        "c_cond": 134,
+        "init_dim": 128,
+        "dim_mults": [1,2,4],
+        "t_dim": 128,
+        "resnet_block_groups": 8
+    },
+
+    "optimizer": {
+        "lr": 3e-4,
+        "betas": [0.9, 0.999],
+        "eps": 1e-8,
+        "weight_decay": 1e-2
+    },
+
+    "ddpm_T": 400
+}

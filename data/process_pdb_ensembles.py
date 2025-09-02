@@ -6,7 +6,6 @@ from datetime import datetime
 from difflib import SequenceMatcher
 from pathlib import Path
 
-import numpy as np
 import torch
 from Bio.PDB import FastMMCIFParser, PPBuilder, calc_dihedral
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
@@ -28,6 +27,7 @@ NEEDED_KEYS = {
     "_pdbx_poly_seq_scheme.pdb_ins_code",
     "_pdbx_poly_seq_scheme.seq_id",
 }
+TRAIN_VAL_RATIO = 0.9
 
 def load_cif_dict(path):
     raw = MMCIF2Dict(str(path))
@@ -139,7 +139,7 @@ def _process_ensemble(ensemble_path):
                 return (False, ensemble_path, f"representative seq not found for {pdb_id} in {ensemble_path.name}")
 
             torsions = calculate_torsions(model[chain_id])
-            aligned_torsions = np.full((len(repr_seq), 3), np.nan, dtype=np.float32)
+            aligned_torsions = torch.full((len(repr_seq), 3), float("nan"), dtype=torch.float32)
             for i in range(len(repr_seq)):
                 res_id = mapping.get(i + offset + 1)
                 if res_id in torsions:
@@ -198,7 +198,41 @@ def process_ensembles():
                 tqdm.write(f"FAILED: {dir_path.name}")
                 tqdm.write(f"- Reason: {error_msg}")
     print("Processing complete")
+    
+    for dir in ensemble_dirs:
+        cif_count = sum(1 for f in dir.iterdir() if f.is_file() and f.suffix == ".cif")
+        train_val_target = OUTPUT_DIR / "train_val" / dir.name
+        benchmark_target = OUTPUT_DIR / "benchmark" / dir.name
+        if not train_val_target.is_dir() and not benchmark_target.is_dir():
+            continue
+        pt_count = 0 # find partially processed ensembles
+        if train_val_target.is_dir():
+            pt_count = sum(1 for f in train_val_target.iterdir() if f.is_file() and f.suffix == ".pt")
+        elif benchmark_target.is_dir():
+            pt_count = sum(1 for f in benchmark_target.iterdir() if f.is_file() and f.suffix == ".pt")
+        if (cif_count <= 16 and cif_count != pt_count) or (cif_count > 16 and pt_count != 16):
+            target_dir = train_val_target if train_val_target.is_dir() else benchmark_target
+            shutil.rmtree(target_dir)
+            print(f"Deleting failed directory: {target_dir}")
+
+def split_train_val():
+    ROOT = OUTPUT_DIR / "train_val"
+    TRAIN_DIR = Path("data/datasets/train")
+    VAL_DIR = Path("data/datasets/val")
+    TRAIN_DIR.mkdir(exist_ok=True)
+    VAL_DIR.mkdir(exist_ok=True)
+    ensembles = [d for d in ROOT.iterdir() if d.is_dir()]
+    random.shuffle(ensembles)
+    split_idx = int(TRAIN_VAL_RATIO * len(ensembles))
+    train_ensembles = ensembles[:split_idx]
+    val_ensembles = ensembles[split_idx:]
+    print(f"train: {len(train_ensembles)} | val: {len(val_ensembles)}")
+    for d in train_ensembles:
+        shutil.copytree(d, TRAIN_DIR / d.name, dirs_exist_ok=True)
+    for d in val_ensembles:
+        shutil.copytree(d, VAL_DIR / d.name, dirs_exist_ok=True)
 
 if __name__ == "__main__":
     random.seed(SEED)
     process_ensembles()
+    split_train_val()

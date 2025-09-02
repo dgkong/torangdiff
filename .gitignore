@@ -1,8 +1,10 @@
 .DS_Store
-data/pdb_ensemble_downloads/
+data/pdb_ensemble_downloads
 data/datasets
+data/esm_embeddings
 profile.html
 profile.json
+out/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

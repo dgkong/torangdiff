@@ -15,4 +15,5 @@ Used the PDB Search API to query protein ensembles.
 - resulted in 3055 train_val ensembles and 113 benchmark ensembles consisting of 13,060 total structures
     - benchmark set was split based on initial deposition date: 2024-01-01
 - filtered 17 ensembles, 3 of them due to MMCIF key error and the rest due to longest subsequences shorter than 50
+- 90/10 train_val split - train: 2749 | val: 306
 
